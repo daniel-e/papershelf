@@ -15,3 +15,4 @@ Current features:
 * import new papers
 * make notes for each paper
 * download papers from an URL
+* save backup of notes while making notes for a paper
