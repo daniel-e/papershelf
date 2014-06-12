@@ -6,7 +6,7 @@ class DialogDetails(gtk.Dialog):
 
   def __init__(self, title, parent, flag, item, par):
     gtk.Dialog.__init__(self, title, parent, flag)
-    self.resize(400, 200)
+    self.resize(1, 400)
     self.parent_window = par
 
     t = gtk.Table(rows = 4, columns = 2, homogeneous = False)
@@ -14,10 +14,34 @@ class DialogDetails(gtk.Dialog):
     t.show()
 
     # ---
-    l = gtk.Label("Abstract")
-    l.show()
-    l.set_alignment(xalign = 0.0, yalign = 0.0)
-    t.attach(l, 0, 1, 0, 1)
+
+    l, e = self.init_title(item.get_title())
+    self.data_title = e
+    t.attach(l, 0, 1, 0, 1, xoptions = gtk.SHRINK|gtk.FILL)
+    t.attach(e, 1, 2, 0, 1, xoptions = gtk.FILL)
+
+    l, e = self.init_authors(item.get_authors())
+    self.data_authors = e
+    t.attach(l, 0, 1, 1, 2, xoptions = gtk.SHRINK|gtk.FILL)
+    t.attach(e, 1, 2, 1, 2, xoptions = gtk.FILL)
+
+    l, e = self.init_year(item.get_year())
+    self.data_year = e
+    t.attach(l, 0, 1, 2, 3, xoptions = gtk.SHRINK|gtk.FILL)
+    t.attach(e, 1, 2, 2, 3, xoptions = gtk.FILL)
+
+    # ---
+
+    f = gtk.Frame("")
+    f.show()
+    f.add(t)
+
+    self.vbox.pack_start(f, expand = False, fill = False, padding = 0)
+
+    # ---
+
+    f = gtk.Frame("Abstract")
+    f.show()
 
     v = gtk.TextView()
     v.show()
@@ -33,26 +57,15 @@ class DialogDetails(gtk.Dialog):
     sc.set_policy(gtk.POLICY_NEVER, gtk.POLICY_ALWAYS)
     sc.show()
     sc.add(v)
-    t.attach(sc, 1, 2, 0, 1)
+    b = gtk.VBox(False)
+    b.show()
+    b.pack_start(sc, padding = 5)
+
+    f.add(b)
+
+    self.vbox.pack_start(f, expand = True, fill = True, padding = 5)
 
     # ---
-
-    l, e = self.init_authors(item.get_authors())
-    self.data_authors = e
-    t.attach(l, 0, 1, 1, 2)
-    t.attach(e, 1, 2, 1, 2)
-
-    l, e = self.init_year(item.get_year())
-    self.data_year = e
-    t.attach(l, 0, 1, 2, 3)
-    t.attach(e, 1, 2, 2, 3)
-
-    l, e = self.init_title(item.get_title())
-    self.data_title = e
-    t.attach(l, 0, 1, 3, 4)
-    t.attach(e, 1, 2, 3, 4)
-
-    self.vbox.pack_start(t)
 
     self.add_button("Ok", 1)
     self.add_button("Cancel", 2)
@@ -63,7 +76,7 @@ class DialogDetails(gtk.Dialog):
     l.set_alignment(xalign = 0.0, yalign = 0.5)
 
     e = gtk.Entry()
-    e.set_width_chars(40)
+    e.set_width_chars(60)
     e.set_text(val)
     e.show()
 
@@ -87,7 +100,7 @@ class DialogDetails(gtk.Dialog):
     l.set_alignment(xalign = 0.0, yalign = 0.5)
 
     e = gtk.Entry()
-    e.set_width_chars(40)
+    e.set_width_chars(60)
     e.set_text(val)
     e.show()
 
