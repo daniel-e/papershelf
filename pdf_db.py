@@ -27,11 +27,14 @@ class Item():
       return self.fname[0:20] + "..."
     return self.fname
 
+  def update_preview(self):
+    r = self.parent.db_query("SELECT img FROM preview WHERE fid=%d" % self.id())
+    if len(r) > 0:
+      self.preview = str(r[0][0])
+
   def get_preview(self):
     if not self.preview:
-      r = self.parent.db_query("SELECT img FROM preview WHERE fid=%d" % self.id())
-      if len(r) > 0:
-        self.preview = str(r[0][0])
+      self.update_preview()
     if not self.preview:
       f = open("noimage.jpg")
       self.preview = f.read()
@@ -208,6 +211,25 @@ class PDFdb():
       if p not in fnames:
         newfiles.append(p)
     return newfiles
+
+  def update_preview(self, item, filename):
+    conv = self.s.vars["pdfconvert"]
+    path = self.s.vars["pdflocation"]
+    fname = pdf.create_preview(conv, filename)
+    if images.image_height(fname) > 181:
+      images.resize_height(fname, 140, 181)
+    f = open(fname, "rb")
+    data = f.read()
+    f.close()
+    os.unlink(fname)
+
+    con = sqlite3.connect(self.s.vars["pdfdb"])
+    c = con.cursor()
+    c.execute("UPDATE preview SET img=? WHERE fid=?", [buffer(data), item.id()])
+    con.commit()
+    con.close()
+
+    item.update_preview()
 
   def import_file(self, filename):
     conv = self.s.vars["pdfconvert"]

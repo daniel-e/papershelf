@@ -42,6 +42,12 @@ class MainWindow:
   def tags(self):
     return self.pdfdb.get_tags()
 
+  def set_image(self, i, item):
+    buf = gtk.gdk.PixbufLoader()
+    buf.write(item.get_preview())
+    buf.close()
+    i.set_from_pixbuf(buf.get_pixbuf())
+
   def create_item(self, item):
     v = gtk.VBox(False, 0)
     v.show()
@@ -52,10 +58,7 @@ class MainWindow:
 
     # -----
     i = gtk.Image()
-    buf = gtk.gdk.PixbufLoader()
-    buf.write(item.get_preview())
-    buf.close()
-    i.set_from_pixbuf(buf.get_pixbuf())
+    self.set_image(i, item)
     i.show()
 
     # -----
@@ -125,8 +128,23 @@ class MainWindow:
     menu.append(menu_item)
     menu_item.show()
 
+    menu_item = gtk.MenuItem("Replace cover")
+    menu_item.connect("activate", self.replace_cover, item)
+    menu.append(menu_item)
+    menu_item.show()
+
     menu.popup(None, None, None, event.button, event.time, None)
     menu.show_all()
+
+  def replace_cover(self, widget, item):
+    f = gtk.FileChooserDialog("Select an image", None,
+      buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+    if f.run() == gtk.RESPONSE_OK:
+      self.pdfdb.update_preview(item, f.get_filename())
+      d = self.items[item.id()]
+      i = d["image"]
+      self.set_image(i, item)
+    f.destroy()
 
   def rename_file(self, widget, item):
     dialog = dialog_rename.DialogRename("Rename file", None, gtk.DIALOG_MODAL, item)
