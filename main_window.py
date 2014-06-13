@@ -4,7 +4,7 @@ import gtk
 import shutil, urllib2, os, tempfile
 
 import tools, settings, dialog_correct, dialog_settings, dialog_download
-import dialog_tags, dialog_notes, dialog_details
+import dialog_tags, dialog_notes, dialog_details, dialog_rename
 import left_bar
 import pdf_db, tools
 
@@ -35,6 +35,7 @@ class MainWindow:
     self.settings = settings.Settings()
     self.WIDTH = self.settings.vars["windowwidth"]
     self.HEIGHT = self.settings.vars["windowheight"]
+    self.items = {}
 
     self.init_window()
 
@@ -84,6 +85,9 @@ class MainWindow:
     if True: # TODO
       v.pack_start(tags, False, False, 0)
 
+    d = {"filename": l, "image": i, "tags": tags, "title": vb}
+    self.items[item.id()] = d
+
     # -----
     e = gtk.EventBox()
     e.add(v)
@@ -116,8 +120,31 @@ class MainWindow:
     menu.append(menu_item)
     menu_item.show()
 
+    menu_item = gtk.MenuItem("Rename file")
+    menu_item.connect("activate", self.rename_file, item)
+    menu.append(menu_item)
+    menu_item.show()
+
     menu.popup(None, None, None, event.button, event.time, None)
     menu.show_all()
+
+  def rename_file(self, widget, item):
+    dialog = dialog_rename.DialogRename("Rename file", None, gtk.DIALOG_MODAL, item)
+    dialog.show()
+    if dialog.run() == 1: # Ok
+      if not self.pdfdb.rename(item, dialog.get_new_filename()):
+        dialogerr = gtk.Dialog("Error", None, gtk.DIALOG_MODAL, (gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+        l = gtk.Label("An error occured. Could not rename file.")
+        l.show()
+        dialogerr.vbox.pack_start(l)
+        dialogerr.show()
+        dialogerr.run()
+        dialogerr.destroy()
+      else:
+        data = self.items[item.id()]
+        l = data["filename"]
+        l.set_text(item.short_filename())
+    dialog.destroy()
 
   def details(self, widget, item):
     dialog = dialog_details.DialogDetails("Details", None, gtk.DIALOG_MODAL, item, self)

@@ -10,6 +10,9 @@ class Item():
     self.parent = parent
     self.notes = ""
 
+  def set_filename(self, fname):
+    self.fname = fname
+
   def filename(self):
     return self.fname
 
@@ -123,6 +126,17 @@ class PDFdb():
     con.commit()
     con.close()
 
+  def rename(self, item, new_fname):
+    p = self.s.vars["pdflocation"]
+    if os.path.exists(p + "/" + new_fname):
+      return False
+    try:
+      os.rename(p + "/" + item.filename(), p + "/" + new_fname)
+      item.set_filename(new_fname)
+      self.update_item(item)
+      return True
+    except:
+      return False
 
   def update_tags(self):
     self.tags = {}
