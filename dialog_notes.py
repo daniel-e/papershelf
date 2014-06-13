@@ -39,7 +39,7 @@ class DialogNotes(gtk.Dialog):
 
     self.tmpfile = gtk.Label("")
     self.tmpfile.show()
-    h.pack_start(self.tmpfile, False, False, 10)
+    h.pack_start(self.tmpfile, False, False, 0)
 
     self.vbox.pack_end(h, expand = False, fill = False)
 
@@ -64,6 +64,7 @@ class DialogNotes(gtk.Dialog):
     self.destroy()
 
   def save_notes(self, widget, item = None):
+    self.modified_label.set_text("")
     buf = self.v.get_buffer()
     txt = buf.get_text(buf.get_start_iter(), buf.get_end_iter())
     r = self.parent_window.pdfdb.update_notes(item, txt)
@@ -73,7 +74,7 @@ class DialogNotes(gtk.Dialog):
 
   def changed(self, widget, item = None):
     self.modified = True
-    self.modified_label.set_text("modified")
+    self.modified_label.set_text("modified  ")
 
   def auto_save(self):
     if not self.destroyed:

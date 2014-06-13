@@ -8,6 +8,23 @@ import dialog_tags, dialog_notes, dialog_details
 import left_bar
 import pdf_db, tools
 
+def wrap_it(s, arr, res):
+  s = s.strip()
+  if len(arr) == 0:
+    if len(s) > 0:
+      res.append(s)
+    return res
+  if len(s) + len(arr[0]) > 30 and len(s) > 0:
+    res.append(s)
+    return wrap_it("", arr, res)
+  else:
+    return wrap_it(s + " " + arr[0], arr[1:], res)
+
+def wrap_string(s):
+  r = []
+  ss = [i.strip() for i in s.split(" ") if len(s.strip()) > 0]
+  return wrap_it("", ss, r)
+
 class MainWindow:
 
   def run(self):
@@ -26,25 +43,48 @@ class MainWindow:
 
   def create_item(self, item):
     v = gtk.VBox(False, 0)
+    v.show()
+
+    # -----
     l = gtk.Label(item.short_filename())
     l.show()
 
+    # -----
     i = gtk.Image()
     buf = gtk.gdk.PixbufLoader()
     buf.write(item.get_preview())
     buf.close()
     i.set_from_pixbuf(buf.get_pixbuf())
     i.show()
+
+    # -----
+    tags = gtk.Label(", ".join(item.get_tags()))
+    tags.show()
+
+    # -----
+    vb = gtk.VBox(False, 0)
+    vb.show()
+    for k in wrap_string(item.get_title()):
+      t = gtk.Label("<b>" + k + "</b>")
+      t.set_justify(gtk.JUSTIFY_CENTER)
+      # http://faq.pygtk.org/index.py?req=show&file=faq07.003.htp
+      t.set_use_markup(True)
+      t.show()
+      vb.pack_start(t, False, False, 2)
+
+
+    # -----
     if self.settings.vars["view_preview"]:
       v.pack_start(i, False, False, 5)
+    if True: # TODO
+      if len(item.get_title()) > 0:
+        v.pack_start(vb, False, False, 5)
     if self.settings.vars["view_filename"]:
       v.pack_start(l, False, False, 5)
-    v.show()
+    if True: # TODO
+      v.pack_start(tags, False, False, 0)
 
-    t = gtk.Label(", ".join(item.get_tags()))
-    t.show()
-    v.pack_start(t, False, False, 0)
-
+    # -----
     e = gtk.EventBox()
     e.add(v)
     e.show()
@@ -160,7 +200,7 @@ class MainWindow:
     self.fill_table(self.table)
 
     self.sc = gtk.ScrolledWindow()
-    self.sc.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+    self.sc.set_policy(gtk.POLICY_NEVER, gtk.POLICY_ALWAYS)
     self.sc.show()
     self.sc.add_with_viewport(self.table)
 
