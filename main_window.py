@@ -36,6 +36,7 @@ class MainWindow:
     self.WIDTH = self.settings.vars["windowwidth"]
     self.HEIGHT = self.settings.vars["windowheight"]
     self.items = {}
+    self.tagdata = None
 
     self.init_window()
 
@@ -76,20 +77,31 @@ class MainWindow:
       t.show()
       vb.pack_start(t, False, False, 2)
 
+    # -----
+    vbs = gtk.VBox(False, 0)
+    vbs.show()
+    for k in wrap_string(item.get_subtitle()):
+      t = gtk.Label(k)
+      t.set_justify(gtk.JUSTIFY_CENTER)
+      t.show()
+      vbs.pack_start(t, False, False, 2)
 
     # -----
-    if self.settings.vars["view_preview"]:
-      v.pack_start(i, False, False, 5)
-    if True: # TODO
-      if len(item.get_title()) > 0:
-        v.pack_start(vb, False, False, 5)
-    if self.settings.vars["view_filename"]:
-      v.pack_start(l, False, False, 5)
-    if True: # TODO
-      v.pack_start(tags, False, False, 0)
-
-    d = {"filename": l, "image": i, "tags": tags, "title": vb}
-    self.items[item.id()] = d
+    if not self.settings.vars["view_preview"]:
+      i.hide()
+    v.pack_start(i, False, False, 5)
+    if not self.settings.vars["view_title"]:
+      vb.hide()
+    v.pack_start(vb, False, False, 0)
+    if not self.settings.vars["view_subtitle"]:
+      vbs.hide()
+    v.pack_start(vbs, False, False, 0)
+    if not self.settings.vars["view_filename"]:
+      l.hide()
+    v.pack_start(l, False, False, 5)
+    if not self.settings.vars["view_tags"]:
+      tags.hide()
+    v.pack_start(tags, False, False, 0)
 
     # -----
     e = gtk.EventBox()
@@ -97,6 +109,10 @@ class MainWindow:
     e.show()
     e.add_events(gtk.gdk.BUTTON_PRESS_MASK)
     e.connect("button_press_event", self.viewpdf, item)
+
+    d = {"filename": l, "image": i, "tags": tags, "title": vb, "box": e, "subtitle": vbs}
+    self.items[item.id()] = d
+
     return e
 
   def viewpdf(self, widget, event, item):
@@ -125,6 +141,11 @@ class MainWindow:
 
     menu_item = gtk.MenuItem("Rename file")
     menu_item.connect("activate", self.rename_file, item)
+    menu.append(menu_item)
+    menu_item.show()
+
+    menu_item = gtk.MenuItem("Delete file")
+    menu_item.connect("activate", self.remove_file, item)
     menu.append(menu_item)
     menu_item.show()
 
@@ -164,6 +185,17 @@ class MainWindow:
         l.set_text(item.short_filename())
     dialog.destroy()
 
+  def remove_file(self, widget, item):
+    dg = gtk.Dialog("Delete file", None, gtk.DIALOG_MODAL, (gtk.STOCK_OK, gtk.RESPONSE_ACCEPT, gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT))
+    l = gtk.Label("Do you really want to delete the file?")
+    l.show()
+    dg.vbox.pack_start(l)
+    dg.show()
+    if dg.run() == gtk.RESPONSE_ACCEPT:
+      self.pdfdb.delete(item)
+    dg.destroy()
+    self.update_table()
+
   def details(self, widget, item):
     dialog = dialog_details.DialogDetails("Details", None, gtk.DIALOG_MODAL, item, self)
     dialog.show()
@@ -173,7 +205,12 @@ class MainWindow:
       item.set_title(dialog.get_title())
       item.set_year(dialog.get_year())
       item.set_authors(dialog.get_authors())
+      item.set_subtitle(dialog.get_subtitle())
       self.pdfdb.update_item(item)
+      # update view
+      d = self.items[item.id()]
+      #d["title"].set_text(item.get_title())
+      #d["subtitle"].set_text(item.get_subtitle())
     dialog.destroy()
 
   def manage_tags(self, widget, item = None):
@@ -223,11 +260,25 @@ class MainWindow:
       x = i % cols
       t.attach(self.create_item(item), x, x + 1, y, y + 1, xoptions = gtk.EXPAND)
 
+    self.tagdata = tag_visibility
+
   def update_table(self, tag_visibility = None):
     for i in self.table.get_children():
       self.table.remove(i)
-    self.fill_table(self.table, tag_visibility)
-    pass
+    t = tag_visibility
+    if not t:
+      t = self.tagdata
+    self.fill_table(self.table, t)
+
+  def update_items(self, what, state):
+    # what = Title|Tags|Filename|Preview|Subtitle
+    # filename, image, tags, title, subtitle
+    mapping = {"Title": "title", "Tags": "tags", "Filename": "filename", "Preview": "image", "Subtitle": "subtitle"}
+    for k, v in self.items.items():
+      if state:
+        v[mapping[what]].show()
+      else:
+        v[mapping[what]].hide()
 
   def init_window(self):
     self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)

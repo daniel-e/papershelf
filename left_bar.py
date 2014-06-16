@@ -12,6 +12,7 @@ class LeftBar(gtk.VBox):
 
     self.parent_window = parent
     s = settings.Settings()
+    self.s = s
 
     button = gtk.Button("Download PDF from URL")
     button.connect("clicked", self.download_dialog, None)
@@ -51,13 +52,30 @@ class LeftBar(gtk.VBox):
     l.show()
     self.pack_start(l, False, False, 0)
 
+    c = gtk.CheckButton("Title")
+    c.set_active(s.vars["view_title"])
+    c.show()
+    self.pack_start(c, False, False, 0)
+    c.connect("toggled", self.view_toggled)
+    c = gtk.CheckButton("Subtitle")
+    c.set_active(s.vars["view_subtitle"])
+    c.show()
+    c.connect("toggled", self.view_toggled)
+    self.pack_start(c, False, False, 0)
+    c = gtk.CheckButton("Tags")
+    c.set_active(s.vars["view_tags"])
+    c.show()
+    c.connect("toggled", self.view_toggled)
+    self.pack_start(c, False, False, 0)
     c = gtk.CheckButton("Filename")
     c.set_active(s.vars["view_filename"])
     c.show()
+    c.connect("toggled", self.view_toggled)
     self.pack_start(c, False, False, 0)
     c = gtk.CheckButton("Preview")
     c.set_active(s.vars["view_preview"])
     c.show()
+    c.connect("toggled", self.view_toggled)
     self.pack_start(c, False, False, 0)
 
     # ----- Tags -----
@@ -86,6 +104,15 @@ class LeftBar(gtk.VBox):
     self.pack_start(self.tag_boxes, False, False, 5)
 
     self.show()
+
+  def view_toggled(self, widget, data = None):
+    l = widget.get_label()
+    mapping = {"Title": "view_title", "Subtitle": "view_subtitle",
+      "Tags": "view_tags", "Filename": "view_filename", "Preview": "view_preview"}
+    if l in mapping:
+      self.s.vars[mapping[l]] = widget.get_active()
+      self.s.commit()
+      self.parent_window.update_items(l, widget.get_active())
 
   def tag_toggled(self, widget, tag = None):
     self.tag_visibility[tag] = widget.get_active()

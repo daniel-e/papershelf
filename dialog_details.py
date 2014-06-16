@@ -9,7 +9,7 @@ class DialogDetails(gtk.Dialog):
     self.resize(1, 400)
     self.parent_window = par
 
-    t = gtk.Table(rows = 4, columns = 2, homogeneous = False)
+    t = gtk.Table(rows = 5, columns = 2, homogeneous = False)
     t.set_col_spacings(5)
     t.show()
 
@@ -20,15 +20,20 @@ class DialogDetails(gtk.Dialog):
     t.attach(l, 0, 1, 0, 1, xoptions = gtk.SHRINK|gtk.FILL)
     t.attach(e, 1, 2, 0, 1, xoptions = gtk.FILL)
 
-    l, e = self.init_authors(item.get_authors())
-    self.data_authors = e
+    l, e = self.init_subtitle(item.get_subtitle())
+    self.data_subtitle = e
     t.attach(l, 0, 1, 1, 2, xoptions = gtk.SHRINK|gtk.FILL)
     t.attach(e, 1, 2, 1, 2, xoptions = gtk.FILL)
 
-    l, e = self.init_year(item.get_year())
-    self.data_year = e
+    l, e = self.init_authors(item.get_authors())
+    self.data_authors = e
     t.attach(l, 0, 1, 2, 3, xoptions = gtk.SHRINK|gtk.FILL)
     t.attach(e, 1, 2, 2, 3, xoptions = gtk.FILL)
+
+    l, e = self.init_year(item.get_year())
+    self.data_year = e
+    t.attach(l, 0, 1, 3, 4, xoptions = gtk.SHRINK|gtk.FILL)
+    t.attach(e, 1, 2, 3, 4, xoptions = gtk.FILL)
 
     # ---
 
@@ -106,8 +111,23 @@ class DialogDetails(gtk.Dialog):
 
     return l, e
 
+  def init_subtitle(self, val):
+    l = gtk.Label("Subtitle")
+    l.show()
+    l.set_alignment(xalign = 0.0, yalign = 0.5)
+
+    e = gtk.Entry()
+    e.set_width_chars(60)
+    e.set_text(val)
+    e.show()
+
+    return l, e
+
   def get_title(self):
     return self.data_title.get_text()
+
+  def get_subtitle(self):
+    return self.data_subtitle.get_text()
 
   def get_authors(self):
     return self.data_authors.get_text()

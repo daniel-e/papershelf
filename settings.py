@@ -22,6 +22,9 @@ class Settings:
     d["sort_by_filename"] = True
     d["view_filename"] = True
     d["view_preview"] = True
+    d["view_title"] = True
+    d["view_subtitle"] = True
+    d["view_tags"] = True
     d["windowwidth"] = 800
     d["windowheight"] = 900
     self.vars = d

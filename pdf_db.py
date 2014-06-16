@@ -79,6 +79,12 @@ class Item():
   def get_title(self):
     return self.no_none(self.title)
 
+  def set_subtitle(self, subtitle):
+    self.subtitle = subtitle
+
+  def get_subtitle(self):
+    return self.no_none(self.subtitle)
+
   def no_none(self, str):
     if str:
       return str
@@ -97,7 +103,7 @@ class PDFdb():
   def read_db(self):
     self.paper_items = []
     self.tags = {}
-    rows = self.db_query("SELECT fname, fid, tags, notes, authors, abstract, year, title from data WHERE 1=1")
+    rows = self.db_query("SELECT fname, fid, tags, notes, authors, abstract, year, title, subtitle from data WHERE 1=1")
     for r in rows:
       item = Item(self, self.s)
       item.fname = str(r[0])
@@ -108,6 +114,7 @@ class PDFdb():
       item.set_abstract("" if not r[5] else str(r[5]))
       item.set_year(r[6])
       item.set_title("" if not r[7] else str(r[7]))
+      item.set_subtitle("" if not r[8] else str(r[8]))
       self.paper_items.append(item)
     self.update_tags()
 
@@ -123,9 +130,10 @@ class PDFdb():
     year = item.get_year()
     title = buffer(item.get_title())
     fid = item.id()
+    subtitle = buffer(item.get_subtitle())
 
-    s = "UPDATE data SET fname=?,tags=?,notes=?,authors=?,abstract=?,year=?,title=? WHERE fid=?"
-    c.execute(s, (fname, tags, notes, authors, abstract, year, title, fid))
+    s = "UPDATE data SET fname=?,tags=?,notes=?,authors=?,abstract=?,year=?,title=?,subtitle=? WHERE fid=?"
+    c.execute(s, (fname, tags, notes, authors, abstract, year, title, subtitle, fid))
     con.commit()
     con.close()
 
@@ -187,7 +195,8 @@ class PDFdb():
     cols = ["fid integer primary key autoincrement",
             "fname text",
             "tags text",
-            "notes text", "authors text", "abstract text", "year text"]
+            "notes text", "authors text", "abstract text", "year text",
+            "title text", "subtitle text"]
     c.execute("CREATE TABLE IF NOT EXISTS data (" + ",".join(cols) + ")")
     con.commit()
     con.close()
@@ -211,6 +220,19 @@ class PDFdb():
       if p not in fnames:
         newfiles.append(p)
     return newfiles
+
+  def delete(self, item):
+    con = sqlite3.connect(self.s.vars["pdfdb"])
+    c = con.cursor()
+    c.execute("DELETE FROM preview WHERE fid=?", [item.id()])
+    c.execute("DELETE FROM data WHERE fid=?", [item.id()])
+    con.commit()
+    con.close()
+    try:
+      os.unlink(self.s.vars["pdflocation"] + "/" + item.filename())
+    except:
+      pass
+    del self.paper_items[item.id()]
 
   def update_preview(self, item, filename):
     conv = self.s.vars["pdfconvert"]
