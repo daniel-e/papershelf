@@ -186,7 +186,8 @@ class MainWindow:
     dialog.destroy()
 
   def remove_file(self, widget, item):
-    dg = gtk.Dialog("Delete file", None, gtk.DIALOG_MODAL, (gtk.STOCK_OK, gtk.RESPONSE_ACCEPT, gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT))
+    dg = gtk.Dialog("Delete file", None, gtk.DIALOG_MODAL,
+      (gtk.STOCK_OK, gtk.RESPONSE_ACCEPT, gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT))
     l = gtk.Label("Do you really want to delete the file?")
     l.show()
     dg.vbox.pack_start(l)
@@ -244,7 +245,7 @@ class MainWindow:
       k = []
       for item in items:
         for tag in item.get_tags():
-          if tag_visibility[tag]:
+          if tag in tag_visibility and tag_visibility[tag]:
             k.append(item)
             break
       items = k
@@ -273,7 +274,8 @@ class MainWindow:
   def update_items(self, what, state):
     # what = Title|Tags|Filename|Preview|Subtitle
     # filename, image, tags, title, subtitle
-    mapping = {"Title": "title", "Tags": "tags", "Filename": "filename", "Preview": "image", "Subtitle": "subtitle"}
+    mapping = {"Title": "title", "Tags": "tags", "Filename": "filename",
+      "Preview": "image", "Subtitle": "subtitle"}
     for k, v in self.items.items():
       if state:
         v[mapping[what]].show()
@@ -290,10 +292,15 @@ class MainWindow:
     #m = gtk.Menu()
     #m.show()
 
+    tags = self.settings.vars["visible_tags"]
+    t = {}
+    for i in tags.split(","):
+      t[i] = True
+
     self.table = gtk.Table(rows = 1, columns = 1, homogeneous = True)
     self.table.set_col_spacings(10)
     self.table.show()
-    self.fill_table(self.table)
+    self.fill_table(self.table, t)
 
     self.sc = gtk.ScrolledWindow()
     self.sc.set_policy(gtk.POLICY_NEVER, gtk.POLICY_ALWAYS)
@@ -317,4 +324,10 @@ class MainWindow:
 
 
   def destroy(self, widget, data = None):
-      gtk.main_quit()
+    visible_tags = []
+    for i in self.left_bar.tag_boxes.get_children():
+      if i.get_active():
+        visible_tags.append(i.get_label())
+    self.settings.vars["visible_tags"] = ",".join(visible_tags)
+    self.settings.commit()
+    gtk.main_quit()

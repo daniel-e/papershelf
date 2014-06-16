@@ -89,9 +89,10 @@ class LeftBar(gtk.VBox):
     l.show()
     self.pack_start(l, False, False, 0)
 
+    visible_tags = set(self.s.vars["visible_tags"].split(","))
     self.tag_visibility = {}
     for tag in self.parent_window.tags():
-      self.tag_visibility[tag] = True
+      self.tag_visibility[tag] = tag in visible_tags
 
     self.tag_boxes = gtk.VBox(False, 0)
     for tag in sorted(self.parent_window.tags()):
