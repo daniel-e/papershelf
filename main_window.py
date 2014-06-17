@@ -322,8 +322,12 @@ class MainWindow:
     self.window.add(h)
     self.window.show()
 
+    self.sc.get_vadjustment().set_value(self.settings.vars["vpos"])
 
   def destroy(self, widget, data = None):
+    # adjustment of vertical scrollbar
+    self.settings.vars["vpos"] = self.sc.get_vadjustment().get_value()
+    # save tags on exit
     visible_tags = []
     for i in self.left_bar.tag_boxes.get_children():
       if i.get_active():

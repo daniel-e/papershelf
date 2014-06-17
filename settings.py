@@ -27,6 +27,7 @@ class Settings:
     d["view_tags"] = True
     d["windowwidth"] = 800
     d["windowheight"] = 900
+    d["vpos"] = 0
     self.vars = d
     if commit:
       self.commit()
