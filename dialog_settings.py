@@ -2,14 +2,16 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-import settings
+#import settings
 
 class DialogSettings(gtk.Dialog):
 
-  def __init__(self, title, parent, flag):
+  def __init__(self, title, parent, flag, settings):
     gtk.Dialog.__init__(self, title, parent, flag)
 
-    s = settings.Settings()
+    s = settings
+    self.s = s
+    #s = settings.Settings()
 
     t = gtk.Table(rows = 3, columns = 3)
     t.set_col_spacings(10)
@@ -70,7 +72,7 @@ class DialogSettings(gtk.Dialog):
 
   def show(self):
     if self.run() == 1:
-      s = settings.Settings()
+      s = self.s
       s.vars["pdfviewer"] = self.pdf_viewer.get_text()
       s.vars["pdflocation"] = self.pdf_location.get_text()
       s.vars["pdfconvert"] = self.pdf_convert.get_text()

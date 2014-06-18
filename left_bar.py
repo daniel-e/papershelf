@@ -141,7 +141,7 @@ class LeftBar(gtk.VBox):
 
 
   def settings_dialog(self, widget, data = None):
-    dialog = dialog_settings.DialogSettings("Settings", None, gtk.DIALOG_MODAL)
+    dialog = dialog_settings.DialogSettings("Settings", None, gtk.DIALOG_MODAL, self.parent_window.settings)
     dialog.show()
 
   def download_dialog(self, widget, data = None):
