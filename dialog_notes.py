@@ -44,11 +44,12 @@ class DialogNotes(gtk.Dialog):
     self.vbox.pack_end(h, expand = False, fill = False)
 
 
-    b = gtk.Button("Save")
+    b = gtk.Button("_Save")
     b.show()
     b.connect("clicked", self.save_notes, item)
     a.pack_start(b, False, False, 0)
-    b = gtk.Button("Close")
+
+    b = gtk.Button("_Close")
     b.show()
     b.connect("clicked", self.close, None)
     a.pack_start(b, False, False, 0)

@@ -85,6 +85,14 @@ class Item():
   def get_subtitle(self):
     return self.no_none(self.subtitle)
 
+  def set_progress(self, p):
+    self.progress = p
+
+  def get_progress(self):
+    if not self.progress:
+      return 0
+    return self.progress
+
   def no_none(self, str):
     if str:
       return str
@@ -103,7 +111,7 @@ class PDFdb():
   def read_db(self):
     self.paper_items = []
     self.tags = {}
-    rows = self.db_query("SELECT fname, fid, tags, notes, authors, abstract, year, title, subtitle from data WHERE 1=1")
+    rows = self.db_query("SELECT fname, fid, tags, notes, authors, abstract, year, title, subtitle, progress from data WHERE 1=1")
     for r in rows:
       item = Item(self, self.s)
       item.fname = str(r[0])
@@ -115,6 +123,7 @@ class PDFdb():
       item.set_year(r[6])
       item.set_title("" if not r[7] else str(r[7]))
       item.set_subtitle("" if not r[8] else str(r[8]))
+      item.set_progress(r[9])
       self.paper_items.append(item)
     self.update_tags()
 
@@ -131,9 +140,10 @@ class PDFdb():
     title = buffer(item.get_title())
     fid = item.id()
     subtitle = buffer(item.get_subtitle())
+    progress = item.get_progress()
 
-    s = "UPDATE data SET fname=?,tags=?,notes=?,authors=?,abstract=?,year=?,title=?,subtitle=? WHERE fid=?"
-    c.execute(s, (fname, tags, notes, authors, abstract, year, title, subtitle, fid))
+    s = "UPDATE data SET fname=?,tags=?,notes=?,authors=?,abstract=?,year=?,title=?,subtitle=?,progress=? WHERE fid=?"
+    c.execute(s, (fname, tags, notes, authors, abstract, year, title, subtitle, progress, fid))
     con.commit()
     con.close()
 
@@ -196,7 +206,7 @@ class PDFdb():
             "fname text",
             "tags text",
             "notes text", "authors text", "abstract text", "year text",
-            "title text", "subtitle text"]
+            "title text", "subtitle text", "progress integer"]
     c.execute("CREATE TABLE IF NOT EXISTS data (" + ",".join(cols) + ")")
     con.commit()
     con.close()

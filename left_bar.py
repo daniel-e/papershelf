@@ -77,6 +77,11 @@ class LeftBar(gtk.VBox):
     c.show()
     c.connect("toggled", self.view_toggled)
     self.pack_start(c, False, False, 0)
+    c = gtk.CheckButton("Progress")
+    c.set_active(s.vars["view_progress"])
+    c.show()
+    c.connect("toggled", self.view_toggled)
+    self.pack_start(c, False, False, 0)
 
     # ----- Tags -----
 
@@ -109,7 +114,8 @@ class LeftBar(gtk.VBox):
   def view_toggled(self, widget, data = None):
     l = widget.get_label()
     mapping = {"Title": "view_title", "Subtitle": "view_subtitle",
-      "Tags": "view_tags", "Filename": "view_filename", "Preview": "view_preview"}
+      "Tags": "view_tags", "Filename": "view_filename", "Preview": "view_preview",
+      "Progress": "view_progress"}
     if l in mapping:
       self.s.vars[mapping[l]] = widget.get_active()
       self.s.commit()

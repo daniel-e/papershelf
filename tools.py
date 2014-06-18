@@ -49,3 +49,20 @@ def extern_pdf_view(fname):
   if pid == 0:
     child(fname)
     sys.exit(1)
+
+def wrap_it(s, arr, res):
+  s = s.strip()
+  if len(arr) == 0:
+    if len(s) > 0:
+      res.append(s)
+    return res
+  if len(s) + len(arr[0]) > 30 and len(s) > 0:
+    res.append(s)
+    return wrap_it("", arr, res)
+  else:
+    return wrap_it(s + " " + arr[0], arr[1:], res)
+
+def wrap_string(s):
+  r = []
+  ss = [i.strip() for i in s.split(" ") if len(s.strip()) > 0]
+  return wrap_it("", ss, r)

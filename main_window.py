@@ -4,26 +4,9 @@ import gtk
 import shutil, urllib2, os, tempfile
 
 import tools, settings, dialog_correct, dialog_settings, dialog_download
-import dialog_tags, dialog_notes, dialog_details, dialog_rename
+import dialog_tags, dialog_notes, dialog_details, dialog_rename, dialog_progress
 import left_bar
 import pdf_db, tools
-
-def wrap_it(s, arr, res):
-  s = s.strip()
-  if len(arr) == 0:
-    if len(s) > 0:
-      res.append(s)
-    return res
-  if len(s) + len(arr[0]) > 30 and len(s) > 0:
-    res.append(s)
-    return wrap_it("", arr, res)
-  else:
-    return wrap_it(s + " " + arr[0], arr[1:], res)
-
-def wrap_string(s):
-  r = []
-  ss = [i.strip() for i in s.split(" ") if len(s.strip()) > 0]
-  return wrap_it("", ss, r)
 
 class MainWindow:
 
@@ -67,9 +50,26 @@ class MainWindow:
     tags.show()
 
     # -----
+    prgr = gtk.HBox(False, 0)
+    prgr.show()
+    p = gtk.ProgressBar()
+    p.show()
+    p.set_text(str(item.get_progress()) + "%")
+    p.set_fraction(float(item.get_progress()) / 100.0)
+    p.set_usize(120, -1)
+    # hack to center the progressbar
+    ll = gtk.Label("")
+    ll.show()
+    prgr.pack_start(ll, expand = True)
+    prgr.pack_start(p, expand = False)
+    ll = gtk.Label("")
+    ll.show()
+    prgr.pack_start(ll, expand = True)
+
+    # -----
     vb = gtk.VBox(False, 0)
     vb.show()
-    for k in wrap_string(item.get_title()):
+    for k in tools.wrap_string(item.get_title()):
       t = gtk.Label("<b>" + k + "</b>")
       t.set_justify(gtk.JUSTIFY_CENTER)
       # http://faq.pygtk.org/index.py?req=show&file=faq07.003.htp
@@ -80,7 +80,7 @@ class MainWindow:
     # -----
     vbs = gtk.VBox(False, 0)
     vbs.show()
-    for k in wrap_string(item.get_subtitle()):
+    for k in tools.wrap_string(item.get_subtitle()):
       t = gtk.Label(k)
       t.set_justify(gtk.JUSTIFY_CENTER)
       t.show()
@@ -96,6 +96,9 @@ class MainWindow:
     if not self.settings.vars["view_subtitle"]:
       vbs.hide()
     v.pack_start(vbs, False, False, 0)
+    if not self.settings.vars["view_progress"]:
+      prgr.hide()
+    v.pack_start(prgr, False, False, 5)
     if not self.settings.vars["view_filename"]:
       l.hide()
     v.pack_start(l, False, False, 5)
@@ -110,7 +113,8 @@ class MainWindow:
     e.add_events(gtk.gdk.BUTTON_PRESS_MASK)
     e.connect("button_press_event", self.viewpdf, item)
 
-    d = {"filename": l, "image": i, "tags": tags, "title": vb, "box": e, "subtitle": vbs}
+    d = {"filename": l, "image": i, "tags": tags, "title": vb, "box": e,
+      "subtitle": vbs, "progress": p}
     self.items[item.id()] = d
 
     return e
@@ -139,6 +143,11 @@ class MainWindow:
     menu.append(menu_item)
     menu_item.show()
 
+    menu_item = gtk.MenuItem("Set progress")
+    menu_item.connect("activate", self.progress, item)
+    menu.append(menu_item)
+    menu_item.show()
+
     menu_item = gtk.MenuItem("Rename file")
     menu_item.connect("activate", self.rename_file, item)
     menu.append(menu_item)
@@ -156,6 +165,18 @@ class MainWindow:
 
     menu.popup(None, None, None, event.button, event.time, None)
     menu.show_all()
+
+  def progress(self, widget, item):
+    dialog = dialog_progress.DialogProgress("Set progress", None, gtk.DIALOG_MODAL, item)
+    dialog.show()
+    if dialog.run() == 1: # Ok
+      p = dialog.get_progress()
+      item.set_progress(p)
+      self.pdfdb.update_item(item)
+      self.items[item.id()]["progress"].set_fraction(float(p) / 100.0)
+      self.items[item.id()]["progress"].set_text(str(p) + "%")
+    dialog.destroy()
+
 
   def replace_cover(self, widget, item):
     f = gtk.FileChooserDialog("Select an image", None,
@@ -272,10 +293,10 @@ class MainWindow:
     self.fill_table(self.table, t)
 
   def update_items(self, what, state):
-    # what = Title|Tags|Filename|Preview|Subtitle
-    # filename, image, tags, title, subtitle
+    # what = Title|Tags|Filename|Preview|Subtitle|Progress
+    # filename, image, tags, title, subtitle, progress
     mapping = {"Title": "title", "Tags": "tags", "Filename": "filename",
-      "Preview": "image", "Subtitle": "subtitle"}
+      "Preview": "image", "Subtitle": "subtitle", "Progress": "progress"}
     for k, v in self.items.items():
       if state:
         v[mapping[what]].show()
