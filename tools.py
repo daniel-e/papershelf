@@ -1,4 +1,6 @@
 import os, sys, re, sys
+import tempfile, urllib2
+
 import settings
 
 def child(pdffile):

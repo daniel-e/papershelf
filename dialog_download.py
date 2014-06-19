@@ -2,6 +2,8 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
+import dialog_correct, settings, tools
+
 class DialogDownload(gtk.Dialog):
 
   def __init__(self, title, parent, flag):
