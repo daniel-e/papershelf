@@ -1,7 +1,7 @@
 papershelf
 ==========
 
-Papershelf is a Linux application to organize research papers.
+Papershelf is a Linux application to organize research papers, books and everything that is a PDF.
 
 Currently this version is in pre-alpha status and there is no package available.
 
@@ -16,3 +16,4 @@ Current features:
 * make notes for each paper
 * download papers from an URL
 * save backup of notes while making notes for a paper
+* progress bar
