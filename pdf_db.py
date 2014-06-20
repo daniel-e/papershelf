@@ -1,119 +1,21 @@
 import os, tempfile, sqlite3, sys, thread
 
-import images, settings, pdf
-
-class Item():
-
-  def __init__(self, parent, settings):
-    self.s = settings
-    self.preview = None
-    self.parent = parent
-    self.notes = ""
-
-  def set_filename(self, fname):
-    self.fname = fname
-
-  def filename(self):
-    return self.fname
-
-  def path(self):
-    return self.s.vars["pdflocation"] + "/" + self.filename()
-
-  def id(self):
-    return self.fid
-
-  def short_filename(self):
-    if len(self.fname) > 23:
-      return self.fname[0:20] + "..."
-    return self.fname
-
-  def update_preview(self):
-    r = self.parent.db_query("SELECT img FROM preview WHERE fid=%d" % self.id())
-    if len(r) > 0:
-      self.preview = str(r[0][0])
-
-  def get_preview(self):
-    if not self.preview:
-      self.update_preview()
-    if not self.preview:
-      f = open("noimage.jpg")
-      self.preview = f.read()
-      f.close()
-    return self.preview
-
-  def get_tags(self):
-    return [i.strip() for i in self.tags.split(",")]
-
-  def set_tags(self, tags):
-    self.tags = ",".join(tags)
-
-  def get_notes(self):
-    return self.notes
-
-  def set_notes(self, notes):
-    self.notes = ""
-    if notes:
-      self.notes = notes
-
-  def set_authors(self, authors):
-    self.authors = authors
-
-  def get_authors(self):
-    return self.no_none(self.authors)
-
-  def set_abstract(self, abstract):
-    self.abstract = abstract
-
-  def get_abstract(self):
-    return self.no_none(self.abstract)
-
-  def set_year(self, year):
-    self.year = year
-
-  def get_year(self):
-    return self.no_none(self.year)
-
-  def set_title(self, title):
-    self.title = title
-
-  def get_title(self):
-    return self.no_none(self.title)
-
-  def set_subtitle(self, subtitle):
-    self.subtitle = subtitle
-
-  def get_subtitle(self):
-    return self.no_none(self.subtitle)
-
-  def set_progress(self, p):
-    self.progress = p
-
-  def get_progress(self):
-    if not self.progress:
-      return 0
-    return self.progress
-
-  def no_none(self, str):
-    if str:
-      return str
-    return ""
-
+import images, pdf
+from pdfdb_item import Item
 
 class PDFdb():
 
-  def __init__(self):
-    self.s = settings.Settings()
+  def __init__(self, settings):
+    self.settings = settings
     self.init_db()
     self.read_db()
-    #self.update_db()
-    #self.create_previews()
 
   def read_db(self):
     self.paper_items = []
     self.tags = {}
     rows = self.db_query("SELECT fname, fid, tags, notes, authors, abstract, year, title, subtitle, progress from data WHERE 1=1")
     for r in rows:
-      item = Item(self, self.s)
+      item = Item(self, self.settings)
       item.fname = str(r[0])
       item.fid = r[1]
       item.tags = r[2]
@@ -128,7 +30,7 @@ class PDFdb():
     self.update_tags()
 
   def update_item(self, item):
-    con = sqlite3.connect(self.s.vars["pdfdb"])
+    con = sqlite3.connect(self.settings.vars["pdfdb"])
     c = con.cursor()
 
     fname = buffer(item.filename())
@@ -148,7 +50,7 @@ class PDFdb():
     con.close()
 
   def rename(self, item, new_fname):
-    p = self.s.vars["pdflocation"]
+    p = self.settings.vars["pdflocation"]
     if os.path.exists(p + "/" + new_fname):
       return False
     try:
@@ -176,7 +78,7 @@ class PDFdb():
       self.tags[tag].append(fid)
 
   def update_tag(self, item):
-    con = sqlite3.connect(self.s.vars["pdfdb"])
+    con = sqlite3.connect(self.settings.vars["pdfdb"])
     c = con.cursor()
     tags = ",".join(item.get_tags())
     s = "UPDATE data SET tags=? WHERE fid=?"
@@ -188,7 +90,7 @@ class PDFdb():
   def update_notes(self, item, notes):
     try:
       item.set_notes(notes)
-      con = sqlite3.connect(self.s.vars["pdfdb"])
+      con = sqlite3.connect(self.settings.vars["pdfdb"])
       c = con.cursor()
       s = "UPDATE data SET notes=? WHERE fid=?"
       c.execute(s, (buffer(notes), item.id()))
@@ -199,7 +101,7 @@ class PDFdb():
       return False
 
   def init_db(self):
-    con = sqlite3.connect(self.s.vars["pdfdb"])
+    con = sqlite3.connect(self.settings.vars["pdfdb"])
     c = con.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS preview (fid integer, img blob)''')
     cols = ["fid integer primary key autoincrement",
@@ -212,7 +114,7 @@ class PDFdb():
     con.close()
 
   def db_query(self, query):
-    con = sqlite3.connect(self.s.vars["pdfdb"])
+    con = sqlite3.connect(self.settings.vars["pdfdb"])
     c = con.cursor()
     c.execute(query)
     r = c.fetchall()
@@ -223,7 +125,7 @@ class PDFdb():
     return self.paper_items
 
   def check_for_new_files(self):
-    path = self.s.vars["pdflocation"]
+    path = self.settings.vars["pdflocation"]
     fnames = set(i.filename() for i in self.items())
     newfiles = []
     for p in os.listdir(path):
@@ -232,21 +134,21 @@ class PDFdb():
     return newfiles
 
   def delete(self, item):
-    con = sqlite3.connect(self.s.vars["pdfdb"])
+    con = sqlite3.connect(self.settings.vars["pdfdb"])
     c = con.cursor()
     c.execute("DELETE FROM preview WHERE fid=?", [item.id()])
     c.execute("DELETE FROM data WHERE fid=?", [item.id()])
     con.commit()
     con.close()
     try:
-      os.unlink(self.s.vars["pdflocation"] + "/" + item.filename())
+      os.unlink(self.settings.vars["pdflocation"] + "/" + item.filename())
     except:
       pass
     del self.paper_items[item.id()]
 
   def update_preview(self, item, filename):
-    conv = self.s.vars["pdfconvert"]
-    path = self.s.vars["pdflocation"]
+    conv = self.settings.vars["pdfconvert"]
+    path = self.settings.vars["pdflocation"]
     fname = pdf.create_preview(conv, filename)
     if images.image_height(fname) > 181:
       images.resize_height(fname, 140, 181)
@@ -255,7 +157,7 @@ class PDFdb():
     f.close()
     os.unlink(fname)
 
-    con = sqlite3.connect(self.s.vars["pdfdb"])
+    con = sqlite3.connect(self.settings.vars["pdfdb"])
     c = con.cursor()
     c.execute("UPDATE preview SET img=? WHERE fid=?", [buffer(data), item.id()])
     con.commit()
@@ -264,8 +166,8 @@ class PDFdb():
     item.update_preview()
 
   def import_file(self, filename):
-    conv = self.s.vars["pdfconvert"]
-    path = self.s.vars["pdflocation"]
+    conv = self.settings.vars["pdfconvert"]
+    path = self.settings.vars["pdflocation"]
     fname = pdf.create_preview(conv, path + "/" + filename)
     if images.image_height(fname) > 181:
       images.resize_height(fname, 140, 181)
@@ -274,7 +176,7 @@ class PDFdb():
     f.close()
     os.unlink(fname)
 
-    con = sqlite3.connect(self.s.vars["pdfdb"])
+    con = sqlite3.connect(self.settings.vars["pdfdb"])
     c = con.cursor()
     c.execute("INSERT INTO data (fname, tags) VALUES (?, 'new')", [buffer(filename)])
     fid = c.lastrowid

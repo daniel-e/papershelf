@@ -2,8 +2,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-import dialogs.settings, dialogs.download
-import settings
+import dialogs.download
 
 class LeftBar(gtk.VBox):
 
@@ -11,90 +10,68 @@ class LeftBar(gtk.VBox):
     gtk.VBox.__init__(self, False, 0)
 
     self.parent_window = parent
-    s = settings.Settings()
-    self.s = s
+    self.settings = parent.stuff.settings
 
-    button = gtk.Button("Download PDF from URL")
-    button.connect("clicked", self.download_dialog, None)
-    button.show()
-    self.pack_start(button, False, False, 0)
+    self.create_buttons()
+    self.create_separator()
+    self.create_sort_by()
+    self.create_separator()
+    self.create_view()
+    self.create_separator()
+    self.create_tags()
+    self.show()
 
-    button = gtk.Button("Settings")
-    button.connect("clicked", self.settings_dialog, None)
-    button.show()
-    self.pack_start(button, False, False, 0)
-
-    button = gtk.Button("Check for new files")
-    button.connect("clicked", self.check_new_files, None)
-    button.show()
-    self.pack_start(button, False, False, 0)
-
-    sep = gtk.HSeparator()
-    sep.show()
-    self.pack_start(sep, False, False, 10)
-
-    l = gtk.Label("Sort by")
+  def create_label(self, val):
+    l = gtk.Label(val)
     l.set_alignment(xalign = 0.0, yalign = 0.5)
     l.show()
     self.pack_start(l, False, False, 0)
 
-    c = gtk.CheckButton("Filename")
-    c.set_active(s.vars["sort_by_filename"])
-    c.show()
-    self.pack_start(c, False, False, 0)
-
+  def create_separator(self):
     sep = gtk.HSeparator()
     sep.show()
     self.pack_start(sep, False, False, 10)
 
-    l = gtk.Label("View")
-    l.set_alignment(xalign = 0.0, yalign = 0.5)
-    l.show()
-    self.pack_start(l, False, False, 0)
+  def create_view(self):
+    self.create_label("View")
+    d = {
+      "Title": "view_title", "Subtitle": "view_subtitle", "Tags": "view_tags",
+      "Filename": "view_filename", "Preview": "view_preview",
+      "Progress": "view_progress"
+      }
+    for label, conf in d.items():
+      c = gtk.CheckButton(label)
+      c.connect("toggled", self.view_toggled)
+      c.set_active(self.settings.vars[conf])
+      c.show()
+      self.pack_start(c, False, False, 0)
 
-    c = gtk.CheckButton("Title")
-    c.set_active(s.vars["view_title"])
-    c.show()
-    self.pack_start(c, False, False, 0)
-    c.connect("toggled", self.view_toggled)
-    c = gtk.CheckButton("Subtitle")
-    c.set_active(s.vars["view_subtitle"])
-    c.show()
-    c.connect("toggled", self.view_toggled)
-    self.pack_start(c, False, False, 0)
-    c = gtk.CheckButton("Tags")
-    c.set_active(s.vars["view_tags"])
-    c.show()
-    c.connect("toggled", self.view_toggled)
-    self.pack_start(c, False, False, 0)
+  def create_button(self, label, callback):
+    button = gtk.Button(label)
+    button.connect("clicked", callback, None)
+    button.show()
+    self.pack_start(button, False, False, 0)
+
+  def create_buttons(self):
+    self.create_button("Download PDF from URL", self.download_dialog)
+    self.create_button("Settings", self.settings_dialog)
+    self.create_button("Check for new files", self.check_new_files)
+
+  def create_sort_by(self):
+    self.create_label("Sort by")
+
     c = gtk.CheckButton("Filename")
-    c.set_active(s.vars["view_filename"])
+    c.set_active(self.settings.vars["sort_by_filename"])
     c.show()
-    c.connect("toggled", self.view_toggled)
-    self.pack_start(c, False, False, 0)
-    c = gtk.CheckButton("Preview")
-    c.set_active(s.vars["view_preview"])
-    c.show()
-    c.connect("toggled", self.view_toggled)
-    self.pack_start(c, False, False, 0)
-    c = gtk.CheckButton("Progress")
-    c.set_active(s.vars["view_progress"])
-    c.show()
-    c.connect("toggled", self.view_toggled)
     self.pack_start(c, False, False, 0)
 
-    # ----- Tags -----
-
-    sep = gtk.HSeparator()
-    sep.show()
-    self.pack_start(sep, False, False, 10)
-
+  def create_tags(self):
     l = gtk.Label("Tags")
     l.set_alignment(xalign = 0.0, yalign = 0.5)
     l.show()
     self.pack_start(l, False, False, 0)
 
-    visible_tags = set(self.s.vars["visible_tags"].split(","))
+    visible_tags = set(self.settings.vars["visible_tags"].split(","))
     self.tag_visibility = {}
     for tag in self.parent_window.tags():
       self.tag_visibility[tag] = tag in visible_tags
@@ -109,7 +86,7 @@ class LeftBar(gtk.VBox):
     self.tag_boxes.show()
     self.pack_start(self.tag_boxes, False, False, 5)
 
-    self.show()
+
 
   def view_toggled(self, widget, data = None):
     l = widget.get_label()
@@ -117,8 +94,8 @@ class LeftBar(gtk.VBox):
       "Tags": "view_tags", "Filename": "view_filename", "Preview": "view_preview",
       "Progress": "view_progress"}
     if l in mapping:
-      self.s.vars[mapping[l]] = widget.get_active()
-      self.s.commit()
+      self.settings.vars[mapping[l]] = widget.get_active()
+      self.settings.commit()
       self.parent_window.update_items(l, widget.get_active())
 
   def tag_toggled(self, widget, tag = None):
@@ -141,7 +118,7 @@ class LeftBar(gtk.VBox):
 
 
   def settings_dialog(self, widget, data = None):
-    dialog = dialogs.settings.DialogSettings("Settings", None, gtk.DIALOG_MODAL, self.parent_window.settings)
+    dialog = dialogs.settings.DialogSettings("Settings", None, gtk.DIALOG_MODAL, self.settings)
     dialog.show()
 
   def download_dialog(self, widget, data = None):
@@ -149,7 +126,7 @@ class LeftBar(gtk.VBox):
     dialog.show()
 
   def check_new_files(self, widget, data = None):
-    pdfdb = self.parent_window.pdfdb
+    pdfdb = self.parent_window.stuff.pdfdb
     files = pdfdb.check_for_new_files()
     n = len(files)
     if n == 0:
@@ -195,7 +172,7 @@ class LeftBar(gtk.VBox):
     self.import_dialog.vbox.set_spacing(5)
     self.import_dialog.show()
     self.import_dialog.connect("delete-event", self.ignore_close_event)
-    self.parent_window.pdfdb.import_files(files, self.update_import)
+    self.parent_window.stuff.pdfdb.import_files(files, self.update_import)
 
   def update_import(self, done, remaining):
     f = float(done) / (done + remaining)

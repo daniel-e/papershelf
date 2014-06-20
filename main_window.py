@@ -4,7 +4,7 @@ import gtk
 import shutil, urllib2, os, tempfile
 
 import dialogs.tags, dialogs.notes, dialogs.details, dialogs.rename, dialogs.progress
-import tools, settings, left_bar, pdf_db, tools
+import tools, left_bar, tools, stuff
 
 class MainWindow:
 
@@ -12,17 +12,16 @@ class MainWindow:
     gtk.main()
 
   def __init__(self):
-    self.pdfdb = pdf_db.PDFdb()
-    self.settings = settings.Settings()
-    self.WIDTH = self.settings.vars["windowwidth"]
-    self.HEIGHT = self.settings.vars["windowheight"]
+    self.stuff = stuff.Stuff()
+    self.WIDTH = self.stuff.settings.vars["windowwidth"]
+    self.HEIGHT = self.stuff.settings.vars["windowheight"]
     self.items = {}
     self.tagdata = None
 
     self.init_window()
 
   def tags(self):
-    return self.pdfdb.get_tags()
+    return self.stuff.pdfdb.get_tags()
 
   def set_image(self, i, item):
     buf = gtk.gdk.PixbufLoader()
@@ -85,22 +84,22 @@ class MainWindow:
       vbs.pack_start(t, False, False, 2)
 
     # -----
-    if not self.settings.vars["view_preview"]:
+    if not self.stuff.settings.vars["view_preview"]:
       i.hide()
     v.pack_start(i, False, False, 5)
-    if not self.settings.vars["view_title"]:
+    if not self.stuff.settings.vars["view_title"]:
       vb.hide()
     v.pack_start(vb, False, False, 0)
-    if not self.settings.vars["view_subtitle"]:
+    if not self.stuff.settings.vars["view_subtitle"]:
       vbs.hide()
     v.pack_start(vbs, False, False, 0)
-    if not self.settings.vars["view_progress"]:
+    if not self.stuff.settings.vars["view_progress"]:
       prgr.hide()
     v.pack_start(prgr, False, False, 5)
-    if not self.settings.vars["view_filename"]:
+    if not self.stuff.settings.vars["view_filename"]:
       l.hide()
     v.pack_start(l, False, False, 5)
-    if not self.settings.vars["view_tags"]:
+    if not self.stuff.settings.vars["view_tags"]:
       tags.hide()
     v.pack_start(tags, False, False, 0)
 
@@ -170,7 +169,7 @@ class MainWindow:
     if dialog.run() == 1: # Ok
       p = dialog.get_progress()
       item.set_progress(p)
-      self.pdfdb.update_item(item)
+      self.stuff.pdfdb.update_item(item)
       self.items[item.id()]["progress"].set_fraction(float(p) / 100.0)
       self.items[item.id()]["progress"].set_text(str(p) + "%")
     dialog.destroy()
@@ -180,7 +179,7 @@ class MainWindow:
     f = gtk.FileChooserDialog("Select an image", None,
       buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
     if f.run() == gtk.RESPONSE_OK:
-      self.pdfdb.update_preview(item, f.get_filename())
+      self.stuff.pdfdb.update_preview(item, f.get_filename())
       d = self.items[item.id()]
       i = d["image"]
       self.set_image(i, item)
@@ -190,7 +189,7 @@ class MainWindow:
     dialog = dialogs.rename.DialogRename("Rename file", None, gtk.DIALOG_MODAL, item)
     dialog.show()
     if dialog.run() == 1: # Ok
-      if not self.pdfdb.rename(item, dialog.get_new_filename()):
+      if not self.stuff.pdfdb.rename(item, dialog.get_new_filename()):
         dialogerr = gtk.Dialog("Error", None, gtk.DIALOG_MODAL, (gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
         l = gtk.Label("An error occured. Could not rename file.")
         l.show()
@@ -212,7 +211,7 @@ class MainWindow:
     dg.vbox.pack_start(l)
     dg.show()
     if dg.run() == gtk.RESPONSE_ACCEPT:
-      self.pdfdb.delete(item)
+      self.stuff.pdfdb.delete(item)
     dg.destroy()
     self.update_table()
 
@@ -226,7 +225,7 @@ class MainWindow:
       item.set_year(dialog.get_year())
       item.set_authors(dialog.get_authors())
       item.set_subtitle(dialog.get_subtitle())
-      self.pdfdb.update_item(item)
+      self.stuff.pdfdb.update_item(item)
       # update view
       d = self.items[item.id()]
       #d["title"].set_text(item.get_title())
@@ -234,7 +233,7 @@ class MainWindow:
     dialog.destroy()
 
   def manage_tags(self, widget, item = None):
-    dialog = dialogs.tags.DialogTags("Edit tags", None, gtk.DIALOG_MODAL, item, self.pdfdb.get_tags())
+    dialog = dialogs.tags.DialogTags("Edit tags", None, gtk.DIALOG_MODAL, item, self.stuff.pdfdb.get_tags())
     dialog.show()
     r = dialog.run()
     tags = dialog.get_tags() # list of tags, lower cased, stripped
@@ -243,7 +242,7 @@ class MainWindow:
       self.update_tags(tags, item)
 
   def notes(self, widget, item):
-    dialog = dialogs.notes.DialogNotes("Notes", None, gtk.DIALOG_MODAL, item, self)
+    dialog = dialogs.notes.DialogNotes("Notes", None, gtk.DIALOG_MODAL, item, self.stuff.pdfdb)
     dialog.show()
     dialog.run()
     dialog.destroy()
@@ -251,13 +250,13 @@ class MainWindow:
   # tags = list of tags, lower cased, stripped
   def update_tags(self, tags, item):
       item.set_tags(tags)
-      self.pdfdb.update_tag(item)
+      self.stuff.pdfdb.update_tag(item)
       tag_visibility = self.left_bar.update_tags()
       self.update_table(tag_visibility)
 
   def fill_table(self, t, tag_visibility = None):
-    items = self.pdfdb.items()
-    if self.settings.vars["sort_by_filename"]:
+    items = self.stuff.pdfdb.items()
+    if self.stuff.settings.vars["sort_by_filename"]:
       items = sorted(items, key = lambda i: i.filename())
 
     if tag_visibility:
@@ -308,10 +307,7 @@ class MainWindow:
     self.window.connect("destroy", self.destroy)
     self.window.set_position(gtk.WIN_POS_CENTER)
 
-    #m = gtk.Menu()
-    #m.show()
-
-    tags = self.settings.vars["visible_tags"]
+    tags = self.stuff.settings.vars["visible_tags"]
     t = {}
     for i in tags.split(","):
       t[i] = True
@@ -341,16 +337,16 @@ class MainWindow:
     self.window.add(h)
     self.window.show()
 
-    self.sc.get_vadjustment().set_value(self.settings.vars["vpos"])
+    self.sc.get_vadjustment().set_value(self.stuff.settings.vars["vpos"])
 
   def destroy(self, widget, data = None):
     # adjustment of vertical scrollbar
-    self.settings.vars["vpos"] = self.sc.get_vadjustment().get_value()
+    self.stuff.settings.vars["vpos"] = self.sc.get_vadjustment().get_value()
     # save tags on exit
     visible_tags = []
     for i in self.left_bar.tag_boxes.get_children():
       if i.get_active():
         visible_tags.append(i.get_label())
-    self.settings.vars["visible_tags"] = ",".join(visible_tags)
-    self.settings.commit()
+    self.stuff.settings.vars["visible_tags"] = ",".join(visible_tags)
+    self.stuff.settings.commit()
     gtk.main_quit()

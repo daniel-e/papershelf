@@ -5,10 +5,10 @@ import gobject, os, tempfile
 
 class DialogNotes(gtk.Dialog):
 
-  def __init__(self, title, parent, flag, item, par):
+  def __init__(self, title, parent, flag, item, pdfdb):
     gtk.Dialog.__init__(self, title, parent, flag)
     self.resize(600, 600)
-    self.parent_window = par
+    self.pdfdb = pdfdb
 
     a = self.get_action_area()
 
@@ -68,7 +68,7 @@ class DialogNotes(gtk.Dialog):
     self.modified_label.set_text("")
     buf = self.v.get_buffer()
     txt = buf.get_text(buf.get_start_iter(), buf.get_end_iter())
-    r = self.parent_window.pdfdb.update_notes(item, txt)
+    r = self.pdfdb.update_notes(item, txt)
     if not r: # update failed
       # TODO
       pass
