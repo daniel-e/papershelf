@@ -13,9 +13,10 @@ Current features:
 * filter papers by tags
 * each paper is displayed with a preview which is automatically created when importing a new paper
 * add user defined preview for each paper
-* you can add an abstract, authors, year of publication and title to a paper
+* you can add an abstract, authors, year of publication, title and a subtitle to a paper
 * import new papers
 * make notes for each paper
 * download papers from an URL
 * save backup of notes while making notes for a paper
 * progress bar
+* customize what information for each paper is displayed in the overview
