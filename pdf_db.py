@@ -11,7 +11,7 @@ class PDFdb():
     self.read_db()
 
   def read_db(self):
-    self.paper_items = []
+    self.paper_items = {}
     self.tags = {}
     rows = self.db_query("SELECT fname, fid, tags, notes, authors, abstract, year, title, subtitle, progress from data WHERE 1=1")
     for r in rows:
@@ -26,7 +26,7 @@ class PDFdb():
       item.set_title("" if not r[7] else str(r[7]))
       item.set_subtitle("" if not r[8] else str(r[8]))
       item.set_progress(r[9])
-      self.paper_items.append(item)
+      self.paper_items[item.id()] = item
     self.update_tags()
 
   def update_item(self, item):
@@ -63,7 +63,7 @@ class PDFdb():
 
   def update_tags(self):
     self.tags = {}
-    for i in self.paper_items:
+    for i in self.paper_items.values():
       self.add_tags(i.get_tags(), i.id())
 
   def get_tags(self):
@@ -122,7 +122,7 @@ class PDFdb():
     return r
 
   def items(self):
-    return self.paper_items
+    return self.paper_items.values()
 
   def check_for_new_files(self):
     path = self.settings.vars["pdflocation"]
