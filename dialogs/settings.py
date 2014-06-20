@@ -2,8 +2,6 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-#import settings
-
 class DialogSettings(gtk.Dialog):
 
   def __init__(self, title, parent, flag, settings):
@@ -11,7 +9,6 @@ class DialogSettings(gtk.Dialog):
 
     s = settings
     self.s = s
-    #s = settings.Settings()
 
     t = gtk.Table(rows = 3, columns = 3)
     t.set_col_spacings(10)

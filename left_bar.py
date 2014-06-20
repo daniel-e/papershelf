@@ -2,7 +2,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-import dialog_settings, dialog_download, dialog_update_db
+import dialogs.settings, dialogs.download
 import settings
 
 class LeftBar(gtk.VBox):
@@ -141,11 +141,11 @@ class LeftBar(gtk.VBox):
 
 
   def settings_dialog(self, widget, data = None):
-    dialog = dialog_settings.DialogSettings("Settings", None, gtk.DIALOG_MODAL, self.parent_window.settings)
+    dialog = dialogs.settings.DialogSettings("Settings", None, gtk.DIALOG_MODAL, self.parent_window.settings)
     dialog.show()
 
   def download_dialog(self, widget, data = None):
-    dialog = dialog_download.DialogDownload("Download PDF", None, gtk.DIALOG_MODAL)
+    dialog = dialogs.download.DialogDownload("Download PDF", None, gtk.DIALOG_MODAL)
     dialog.show()
 
   def check_new_files(self, widget, data = None):

@@ -3,11 +3,8 @@ pygtk.require('2.0')
 import gtk
 import shutil, urllib2, os, tempfile
 
-import dialogs.tags
-import tools, settings, dialog_correct, dialog_settings, dialog_download
-import dialog_notes, dialog_details, dialog_rename, dialog_progress
-import left_bar
-import pdf_db, tools
+import dialogs.tags, dialogs.notes, dialogs.details, dialogs.rename, dialogs.progress
+import tools, settings, left_bar, pdf_db, tools
 
 class MainWindow:
 
@@ -168,7 +165,7 @@ class MainWindow:
     menu.show_all()
 
   def progress(self, widget, item):
-    dialog = dialog_progress.DialogProgress("Set progress", None, gtk.DIALOG_MODAL, item)
+    dialog = dialogs.progress.DialogProgress("Set progress", None, gtk.DIALOG_MODAL, item)
     dialog.show()
     if dialog.run() == 1: # Ok
       p = dialog.get_progress()
@@ -190,7 +187,7 @@ class MainWindow:
     f.destroy()
 
   def rename_file(self, widget, item):
-    dialog = dialog_rename.DialogRename("Rename file", None, gtk.DIALOG_MODAL, item)
+    dialog = dialogs.rename.DialogRename("Rename file", None, gtk.DIALOG_MODAL, item)
     dialog.show()
     if dialog.run() == 1: # Ok
       if not self.pdfdb.rename(item, dialog.get_new_filename()):
@@ -220,7 +217,7 @@ class MainWindow:
     self.update_table()
 
   def details(self, widget, item):
-    dialog = dialog_details.DialogDetails("Details", None, gtk.DIALOG_MODAL, item, self)
+    dialog = dialogs.details.DialogDetails("Details", None, gtk.DIALOG_MODAL, item, self)
     dialog.show()
     r = dialog.run()
     if r == 1: # Ok
@@ -246,7 +243,7 @@ class MainWindow:
       self.update_tags(tags, item)
 
   def notes(self, widget, item):
-    dialog = dialog_notes.DialogNotes("Notes", None, gtk.DIALOG_MODAL, item, self)
+    dialog = dialogs.notes.DialogNotes("Notes", None, gtk.DIALOG_MODAL, item, self)
     dialog.show()
     dialog.run()
     dialog.destroy()

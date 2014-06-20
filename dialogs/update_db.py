@@ -2,6 +2,8 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
+import correct
+
 class DialogUpdateDB(gtk.Dialog):
 
   def __init__(self, title, parent, flag):
@@ -72,7 +74,7 @@ class DialogUpdateDB(gtk.Dialog):
 
     # DIALOG
     values = {"filename": shortname, "path": path, "idxentry": idxentry}
-    dialog = dialog_correct.DialogCorrect("Is this correct?", self.window, gtk.DIALOG_MODAL, values)
+    dialog = dialogs.correct.DialogCorrect("Is this correct?", self.window, gtk.DIALOG_MODAL, values)
     r = dialog.run()
     dialog.destroy()
 
