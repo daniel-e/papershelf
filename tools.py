@@ -1,4 +1,6 @@
 import os, sys, re, sys
+import tempfile, urllib2
+
 import settings
 
 def child(pdffile):
@@ -39,7 +41,7 @@ def next_number():
 
 def download_pdf(url):
   f = tempfile.NamedTemporaryFile(delete = False, suffix = ".getpdf.pdf")
-  pdf = urllib2.urlopen(self.url.get_text()).read()
+  pdf = urllib2.urlopen(url).read()
   f.write(pdf)
   f.close()
   return f.name

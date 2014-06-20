@@ -26,6 +26,7 @@ class Settings:
     d["view_subtitle"] = True
     d["view_tags"] = True
     d["view_progress"] = True
+    d["visible_tags"] = "new"
     d["windowwidth"] = 800
     d["windowheight"] = 900
     d["vpos"] = 0
