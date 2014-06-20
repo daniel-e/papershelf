@@ -122,22 +122,27 @@ class LeftBar(gtk.VBox):
     dialog.show()
 
   def download_dialog(self, widget, data = None):
-    dialog = dialogs.download.DialogDownload("Download PDF", None, gtk.DIALOG_MODAL)
-    dialog.show()
+    dialog = dialogs.download.DialogDownload("Download PDF", None, gtk.DIALOG_MODAL, self.settings)
+    dialog.run()
+    self.update_pdfdb(False)
 
   def check_new_files(self, widget, data = None):
+    self.update_pdfdb()
+
+  def update_pdfdb(self, show_msg = True):
     pdfdb = self.parent_window.stuff.pdfdb
     files = pdfdb.check_for_new_files()
     n = len(files)
     if n == 0:
-      label = gtk.Label("No new files have been found.")
-      dialog = gtk.Dialog("Check for new files.", None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-        (gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
-      dialog.vbox.pack_start(label, False, False, 10)
-      label.show()
-      dialog.show()
-      dialog.run()
-      dialog.destroy()
+      if show_msg:
+        label = gtk.Label("No new files have been found.")
+        dialog = gtk.Dialog("Check for new files.", None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+          (gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+        dialog.vbox.pack_start(label, False, False, 10)
+        label.show()
+        dialog.show()
+        dialog.run()
+        dialog.destroy()
     else:
       s = "" if n == 1 else "s"
       l1 = gtk.Label("Found " + str(n) + " new file" + s + ".")
@@ -160,7 +165,7 @@ class LeftBar(gtk.VBox):
 
   def import_new_files(self, files):
     n = len(files)
-    self.import_dialog = gtk.Dialog("Import files", None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+    self.import_dialog = gtk.Dialog("Importing files", None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
     l = gtk.Label("Importing files...")
     l.set_alignment(xalign = 0.0, yalign = 0.5)
     l.show()

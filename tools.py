@@ -1,6 +1,7 @@
 import os, sys, re, sys
 import tempfile, urllib2
 
+# TODO settings
 import settings
 
 def child(pdffile):

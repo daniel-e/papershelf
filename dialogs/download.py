@@ -2,83 +2,115 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-import correct, settings, tools
+import shutil
+import correct, settings, tools, filename
 
 class DialogDownload(gtk.Dialog):
 
-  def __init__(self, title, parent, flag):
+  def __init__(self, title, parent, flag, settings):
     gtk.Dialog.__init__(self, title, parent, flag)
 
-    t = gtk.Table(rows = 4, columns = 2)
-    t.set_col_spacings(10)
+    self.settings = settings
 
-    l = gtk.Label("URL:")
-    t.attach(l, 0, 1, 0, 1)
-    l.show()
+    self.create_input_mask()
+    self.create_buttons()
+    self.show_all()
+
+  def create_buttons(self):
+    b = gtk.Button("_Download PDF")
+    b.connect("clicked", self.download, None)
+    self.get_action_area().pack_end(b, False, False, 0)
+
+    b = gtk.Button("_Cancel")
+    b.connect("clicked", self.cancel, None)
+    self.get_action_area().pack_end(b, False, False, 0)
+
+  def create_input_mask(self):
+    v = gtk.HBox(False, 5)
+    v.pack_start(gtk.Label("URL to PDF:"), expand = False)
+
     self.url = gtk.Entry()
     self.url.set_width_chars(60)
-    t.attach(self.url, 1, 2, 0, 1)
-    self.url.show()
+    v.pack_start(self.url, expand = True)
 
-    l = gtk.Label("Title:")
-    t.attach(l, 0, 1, 1, 2)
-    l.show()
-    self.pdftitle = gtk.Entry()
-    t.attach(self.pdftitle, 1, 2, 1, 2)
-    self.pdftitle.show()
+    v.show_all()
+    self.vbox.pack_start(v, False, False, 0)
 
-    l = gtk.Label("Year:")
-    t.attach(l, 0, 1, 2, 3)
-    l.show()
-    self.year = gtk.Entry(max = 10)
-    t.attach(self.year, 1, 2, 2, 3)
-    self.year.show()
-
-    hb = gtk.HBox(False, 0)
-    sep = gtk.VSeparator()
-    sep.show()
-    hb.pack_start(sep, True, True, 0)
-    b = gtk.Button("Download PDF")
-    b.connect("clicked", self.download, None)
-    b.show()
-    hb.pack_start(b, False, False, 0)
-    hb.show()
-    b = gtk.Button("Cancel")
-    b.connect("clicked", self.cancel, None)
-    b.show()
-    hb.pack_start(b, False, False, 0)
-
-    self.vbox.pack_start(t, False, False, 0)
-    sep = gtk.VSeparator()
-    sep.show()
-    self.vbox.pack_start(sep, False, False, 5)
-    self.vbox.pack_start(hb, False, False, 0)
-
-    t.show()
 
   def cancel(self, widget, data = None):
     self.destroy()
 
   def download(self, widget, data = None):
-    fname = tools.download_pdf(self.url.get_text())
+    try:
+      fname = tools.download_pdf(self.url.get_text())
+    except:
+      d = gtk.MessageDialog(
+        None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+        gtk.BUTTONS_CLOSE, "Could not download file.")
+      d.run()
+      d.destroy()
+      return
+
     tools.extern_pdf_view(fname)
 
-    shortname = tools.short_name(self.pdftitle.get_text())
-    i = str(tools.next_number())
-    shortname = i + "_" + shortname + "_p" + i + ".pdf"
+    # ask the user whether the downloaded PDF is actually the PDF which he
+    # wanted to be downloaded
 
-    idxentry = self.pdftitle.get_text() + " (" + self.year.get_text() + ", p" + i + ")"
+    d = gtk.MessageDialog(
+      None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_QUESTION,
+      gtk.BUTTONS_OK_CANCEL, "The PDF has been downloaded successfully. Is it displayed correctly?"
+    )
+    r = d.run()
+    d.destroy()
+    if r == gtk.RESPONSE_CANCEL:
+      return
 
-    s = settings.Settings()
-    path = s.vars["pdflocation"]
+    self.select_filename(fname)
 
-    # DIALOG
-    values = {"filename": shortname, "path": path, "idxentry": idxentry}
-    dialog = dialogs.correct.DialogCorrect("Is this correct?", self.window, gtk.DIALOG_MODAL, values)
-    r = dialog.run()
-    dialog.destroy()
+  def select_filename(self, tmpfname):
+    path = self.settings.vars["pdflocation"]
+    d = filename.DialogFilename("Select a filename", None, gtk.DIALOG_DESTROY_WITH_PARENT, "Ok", path)
+    dst = path + "/" + tmpfname.split("/")[-1]
+    d.set_filename(dst.replace("//", "/"))
+    r = d.run()
+    dstfname = d.get_filename()
+    d.destroy()
+    if r == gtk.RESPONSE_OK:
+      if self.import_file(tmpfname, dstfname):
+        self.destroy()
+      else:
+        self.select_filename(tmpfname)
 
-    if r == 1:
-      d = path + "/" + shortname
-      shutil.copy(f.name, d)
-      os.execvp(s.PDF_VIEWER, [s.PDF_VIEWER, d])
+  def import_file(self, src, dst):
+    path = self.settings.vars["pdflocation"] + "/"
+    path = path.replace("//", "/")
+
+    d = dst.replace("//", "/").split("/")
+    dstfname = d[-1]
+    dstpath = "/".join(d[0:-1]) + "/"
+
+    if dstpath != path:
+      d = gtk.MessageDialog(
+        None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_QUESTION,
+        gtk.BUTTONS_OK_CANCEL,
+        "You have selected a folder which is not the folder where your imported PDFs are stored."
+        "Therefore, the new PDF will not be recognized by papershelf.\n\n"
+        "Do you want to continue?"
+      )
+      r = d.run()
+      d.destroy()
+      if r == gtk.RESPONSE_CANCEL:
+        return False
+
+    try:
+      shutil.copy(src, dstpath + dstfname)
+    except:
+      raise
+      d = gtk.MessageDialog(
+        None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+        gtk.BUTTONS_OK, "Could not copy PDF into destination folder."
+      )
+      d.run()
+      d.destroy()
+
+    return True

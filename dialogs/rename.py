@@ -10,17 +10,15 @@ class DialogRename(gtk.Dialog):
     h = gtk.HBox(False, 0)
     h.show()
 
-    l = gtk.Label("Filename:")
-    l.show()
-    h.pack_start(l, False, False, 5)
+    h.pack_start(gtl.Label("Filename:"), False, False, 5)
 
     e = gtk.Entry()
     e.set_width_chars(60)
     e.set_text(item.filename())
-    e.show()
     self.filename = e
 
     h.pack_start(e, False, False, 5)
+    h.show_all()
 
     self.vbox.pack_start(h, expand = True, fill = True, padding = 5)
 
