@@ -3,8 +3,9 @@ pygtk.require('2.0')
 import gtk
 import shutil, urllib2, os, tempfile
 
+import dialogs.tags
 import tools, settings, dialog_correct, dialog_settings, dialog_download
-import dialog_tags, dialog_notes, dialog_details, dialog_rename, dialog_progress
+import dialog_notes, dialog_details, dialog_rename, dialog_progress
 import left_bar
 import pdf_db, tools
 
@@ -236,7 +237,7 @@ class MainWindow:
     dialog.destroy()
 
   def manage_tags(self, widget, item = None):
-    dialog = dialog_tags.DialogTags("Edit tags", None, gtk.DIALOG_MODAL, item, self.pdfdb.get_tags())
+    dialog = dialogs.tags.DialogTags("Edit tags", None, gtk.DIALOG_MODAL, item, self.pdfdb.get_tags())
     dialog.show()
     r = dialog.run()
     tags = dialog.get_tags() # list of tags, lower cased, stripped
