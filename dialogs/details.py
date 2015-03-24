@@ -1,6 +1,7 @@
 import pygtk
 pygtk.require('2.0')
 import gtk
+import re
 
 class DialogDetails(gtk.Dialog):
 
@@ -9,7 +10,7 @@ class DialogDetails(gtk.Dialog):
     self.resize(1, 400)
     self.parent_window = par
 
-    t = gtk.Table(rows = 5, columns = 2, homogeneous = False)
+    t = gtk.Table(rows = 4, columns = 2, homogeneous = False)
     t.set_col_spacings(5)
     t.show()
 
@@ -71,9 +72,22 @@ class DialogDetails(gtk.Dialog):
     self.vbox.pack_start(f, expand = True, fill = True, padding = 5)
 
     # ---
+    b = gtk.Button("Clean abstract")
+    b.connect("clicked", self.clean_abstract, None)
+    b.show()
+    self.vbox.pack_start(b, False, False, 0)
 
     self.add_button("Ok", 1)
     self.add_button("Cancel", 2)
+
+
+  def clean_abstract(self, widget, event):
+    t = self.get_abstract()
+    t = re.sub(r"-\n", "", t)
+    t = re.sub(r"\n", " ", t)
+    buf = self.data_abstract.get_buffer()
+    buf.set_text(t)
+    pass
 
   def init_authors(self, val):
     l = gtk.Label("Authors")

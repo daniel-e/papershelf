@@ -230,7 +230,9 @@ class MainWindow:
       d = self.items[item.id()]
       #d["title"].set_text(item.get_title())
       #d["subtitle"].set_text(item.get_subtitle())
-    dialog.destroy()
+      dialog.destroy()
+    elif r == 2: # Cancel
+      dialog.destroy()
 
   def manage_tags(self, widget, item = None):
     dialog = dialogs.tags.DialogTags("Edit tags", None, gtk.DIALOG_MODAL, item, self.stuff.pdfdb.get_tags())
