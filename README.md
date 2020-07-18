@@ -1,6 +1,8 @@
 papershelf
 ==========
 
+Note: I don't maintain papershelf anymore. I have replaced it by [papr](https://github.com/daniel-e/papr).
+
 Papershelf is a Linux application to organize research papers, books and everything that is a PDF.
 
 Currently this version is in pre-alpha status and there is no package available.
